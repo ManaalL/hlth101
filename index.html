@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HLTH 101 Interactive</title>
+<meta name="description" content="Interactive review for HLTH 101 Introduction to Health 1 at Waterloo: chapters you do, a term trainer, midterm prep and Pulse the study guide.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+.hf .ring-band{transition:opacity .2s;opacity:0}
+.hf.on-1 .hb1,.hf.on-2 .hb2,.hf.on-3 .hb3,.hf.on-4 .hb4,.hf.on-5 .hb5{opacity:1}
+.hf .co{cursor:pointer}
+.hf .co circle{fill:var(--paper);stroke:var(--c);stroke-width:1.5}
+.hf .co text.n{font-family:var(--mono);font-size:11px;font-weight:500;fill:var(--c);text-anchor:middle}
+.hf .co text.t{fill:var(--head);font-family:var(--sans);font-size:12.5px;font-weight:600}
+.hf .co line{stroke:var(--c);stroke-width:1;stroke-dasharray:3 2}
+.hf .co:hover circle,.hf .co:focus circle{fill:var(--c)} .hf .co:hover text.n,.hf .co:focus text.n{fill:var(--paper)}
+.examchip{display:inline-flex;gap:10px;align-items:center;border:1px solid var(--rule);background:var(--paper);border-radius:8px;padding:6px 12px;margin-bottom:14px}
+.examchip b{font-family:var(--display);font-size:1.15rem;color:var(--mid)}
+</style>
+</head>
+<body>
+<header id="nav"></header>
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <p class="mono" style="margin:0 0 10px">HLTH 101 · Introduction to Health 1 · Waterloo</p>
+      <div class="examchip" id="examchip"></div>
+      <h1>Health ideas you can <em>apply</em>, not just memorize.</h1>
+      <p class="lede">Each unit turns a week of lectures into short chapters you do: sort examples into frameworks, read real tables, place stages in order and diagnose cases. A mini exam then shows you exactly what to go back to.</p>
+      <div class="btns"><a class="btn" id="startBtn" href="midterm.html#plan">Start tonight's plan</a><a class="btn ghost" href="terms.html">Term trainer</a></div>
+      <div class="counts" id="counts"></div>
+    </div>
+    <figure class="plate" id="plate"></figure>
+  </div>
+</section>
+
+<section class="sec" id="units"><div class="wrap">
+  <h2>The units</h2>
+  <p class="sub">One unit per week of lectures. Exam 1 covers Weeks 1 to 5. Your progress saves in this browser.</p>
+  <div class="mods" id="mods"></div>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="split card" style="padding:22px">
+    <div><span class="pill">Question of the day</span><h3 style="margin-top:10px;font-size:1.4rem">One question, every day</h3><p class="sub" style="margin-bottom:0">Pulled from every unit's exam bank. Miss it and you get a link to the chapter that covers it.</p></div>
+    <div id="qod"></div>
+  </div>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <h2>What's inside every unit</h2>
+  <p class="sub">You do something first, then it tests you. Every item links back to the lecture slide it came from.</p>
+  <div class="how">
+    <div><span class="n">01</span><b>Chapters you do</b>Short sections that follow the lectures, slide numbers included. Your first-try score is saved so you can beat it.</div>
+    <div><span class="n">02</span><b>A mini exam</b>No hints until you submit. Then a breakdown by chapter, a list of what to relearn and an explanation for every question.</div>
+    <div><span class="n">03</span><b>Free explore</b>The course's models and diagrams, drawn fresh. Click any part to read what it means and where it came from.</div>
+    <div><span class="n">04</span><b>Pulse</b>The heartbeat trace in the corner. Drag it anywhere, or tap it to ask about a term, get quizzed or see what to study next.</div>
+  </div>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="split">
+    <div class="card"><h3>New this week</h3><div id="newlist"></div></div>
+    <div class="card"><h3>Changelog</h3><ul class="changelog">
+      <li><b>Oct 26, 2026.</b> Site launched with Weeks 1 to 5 (everything on Exam 1): chapters, explore figures, mini exams, term trainer, midterm prep with a timed 45-question practice exam, and Pulse.</li>
+    </ul></div>
+  </div>
+</div></section>
+
+<footer id="foot"></footer>
+<script src="studydata.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/figs.js"></script>
+<script src="assets/act.js"></script>
+<script src="assets/guide.js"></script>
+<script>
+(function(){
+const {esc,$}=H; H.nav(""); H.foot();
+const U=H.units;
+/* exam chip */
+const ec=()=>{ const c=H.countdown(); $("#examchip").innerHTML=c?`<span class="mono">Exam 1 · Tue Oct 27 · 4:00 pm · STC 0010</span><b>${H.countText()}</b>`:`<span class="mono">Exam 1 is done. Exam 2 covers Weeks 6 to 12.</span>`; };
+ec(); setInterval(ec,30000);
+
+/* hero figure: social-ecological rings with a heartbeat trace, annotated by unit */
+(function(){
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const cx=250, cy=215; let g=`<svg class="fig hf" id="hf" viewBox="0 0 680 440" role="img" aria-label="Social-ecological model with callouts linking to each unit">`;
+  const R=[180,140,100,62,30];
+  R.forEach((r,i)=>g+=`<circle cx="${cx}" cy="${cy}" r="${r}" class="${i%2?"sf":"fl"}" stroke="var(--fig-stroke)" stroke-width="${i?1:1.4}" ${i?'stroke-dasharray="5 3"':""}/>`);
+  g+=`<circle class="ring-band hb1" cx="${cx}" cy="${cy}" r="160" fill="none" stroke="var(--u1)" stroke-width="40" style="stroke-opacity:.16"/>`;
+  g+=`<circle class="ring-band hb2" cx="${cx}" cy="${cy}" r="81" fill="none" stroke="var(--u2)" stroke-width="38" style="stroke-opacity:.18"/>`;
+  g+=`<circle class="ring-band hb4" cx="${cx}" cy="${cy}" r="30" fill="var(--u4)" style="fill-opacity:.18"/>`;
+  /* person at the centre */
+  g+=`<circle cx="${cx}" cy="${cy-9}" r="7" fill="none" stroke="var(--fig-stroke)" stroke-width="1.4"/><path d="M${cx-13} ${cy+20} C ${cx-12} ${cy+2}, ${cx+12} ${cy+2}, ${cx+13} ${cy+20}" fill="none" stroke="var(--fig-stroke)" stroke-width="1.4"/>`;
+  [["broad conditions & policies",cy-163],["living & working conditions",cy-122],["social & community networks",cy-82],["individual behaviour",cy-44]].forEach(([t,y])=>g+=`<text x="${cx}" y="${y}" text-anchor="middle" class="cap" style="font-size:9px">${t}</text>`);
+  /* evidence pyramid inset (unit 3) */
+  g+=`<g transform="translate(595 340)"><circle class="ring-band hb3" r="56" fill="var(--u3)" style="fill-opacity:.12"/><circle r="50" fill="var(--paper)" stroke="var(--fig-stroke)" stroke-width="1"/>`;
+  for(let i=0;i<5;i++){ const y1=-34+i*14, y2=y1+14, w1=(y1+34)*0.62, w2=(y2+34)*0.62; g+=`<path d="M${-w1} ${y1} L${w1} ${y1} L${w2} ${y2} L${-w2} ${y2} Z" fill="color-mix(in srgb,var(--u3) ${10+(5-i)*12}%,var(--paper))" stroke="var(--fig-stroke)" stroke-width=".8"/>`; }
+  g+=`</g>`;
+  /* heartbeat trace (unit 5) */
+  const ecg="M10 405 H150 L160 395 L168 405 H190 L198 412 L208 362 L218 420 L226 405 H250 L262 396 L276 405 H600";
+  g+=`<path class="ring-band hb5" d="${ecg}" fill="none" stroke="var(--u5)" stroke-width="8" style="stroke-opacity:.2"/><path id="ecg" d="${ecg}" fill="none" stroke="var(--u5)" stroke-width="1.6" stroke-linejoin="round"/>`;
+  g+=`<circle r="4" fill="var(--u5)">${reduce?"":`<animateMotion dur="4s" repeatCount="indefinite"><mpath href="#ecg"/></animateMotion>`}</circle>`;
+  /* callouts */
+  const CO=[[1,cx+125,cy-125,470,44,"Perspectives & history"],[2,cx+72,cy-34,470,108,"Challenges & behaviour change"],[4,cx+14,cy-4,470,172,"Psychological health"],[3,575,300,470,236,"Research & measures"],[5,560,405,470,300,"Stress"]];
+  CO.forEach(([n,px,py,x,y,t])=>{ const u=U.find(z=>z.n===n); const href=u?`unit.html?u=${u.id}`:"#units"; const lab=u?u.short:t;
+    g+=`<a class="co" href="${href}" style="--c:var(--u${n})" data-n="${n}" aria-label="Week ${n}: ${esc(lab)}"><line x1="${px}" y1="${py}" x2="${x}" y2="${y}"/><circle cx="${x}" cy="${y}" r="11"/><text class="n" x="${x}" y="${y+4}">${n}</text><text class="t" x="${x+17}" y="${y+4}" text-anchor="start">${esc(lab)}</text></a>`; });
+  g+=`<text x="672" y="436" text-anchor="end" class="cap" style="font-size:8.5px">schematic · original drawing</text></svg>`;
+  $("#plate").innerHTML=g+`<figcaption><b>Fig. 1</b> The social-ecological model, annotated by unit. Determinants move from distal at the edge to proximal at the person. The trace along the bottom is Pulse's heartbeat. Click a number to open that unit.</figcaption>`;
+  const svg=$("#hf"); svg.querySelectorAll(".co").forEach(a=>{ const on=()=>svg.classList.add("on-"+a.dataset.n), off=()=>svg.classList.remove("on-"+a.dataset.n); a.addEventListener("mouseenter",on); a.addEventListener("mouseleave",off); a.addEventListener("focus",on); a.addEventListener("blur",off); });
+})();
+
+/* unit cards */
+const prog=H.get("progress",{}), ex=H.get("exam",{});
+let totalCh=0, totalQ=0, totalT=0;
+$("#mods").innerHTML=U.map(u=>{ const c=H.color(u); const done=u.chapters.filter(ch=>prog[ch.id]).length; totalCh+=u.chapters.length; totalQ+=H.bank([u.id]).length; totalT+=u.terms.length;
+  const newN=[...u.terms,...u.questions,...u.chapters].filter(x=>H.isNew(x.added)).length;
+  return `<a class="mod" href="unit.html?u=${u.id}" style="--c:${c}"><div class="top"><span class="icon">${H.ICON[u.n]||""}</span><div><div class="num">Week ${u.n}${newN?` · <span class="pill new">new</span>`:""}</div><h3>${esc(u.title)}</h3></div></div>
+  <ul>${(u.topics||[]).map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
+  <div class="prog"><span class="ring" style="--p:${H.pct(done,u.chapters.length)}"><span>${done}/${u.chapters.length}</span></span><span>chapters done<br>terms ready: <b>${H.readiness(u.id)}%</b>${ex[u.id]?` · exam best <b>${ex[u.id].best}%</b>`:""}</span><span class="go">Open</span></div></a>`; }).join("")
+ + `<a class="mod" href="terms.html" style="--c:var(--accent)"><div class="top"><span class="icon">${H.ICON.terms}</span><div><div class="num">All weeks</div><h3>Term trainer</h3></div></div><p style="margin:0;color:var(--ink2)">Flashcards with spaced repetition. Missed terms come back sooner. A name-the-term mode shows you a definition or example and you give the term.</p><div class="prog"><span>${totalT} terms</span><span class="go">Open</span></div></a>`
+ + `<a class="mod mid" href="midterm.html" style="--c:var(--mid);grid-column:1/-1"><div class="top"><span class="icon">${H.ICON.mid}</span><div><div class="num">Weeks 1 to 5 · Exam 1</div><h3>Midterm prep</h3></div></div>
+   <p style="margin:0">Tonight's study plan, a timed 45-question practice midterm, written review prompts with model answers, a study plan built from your results, a countdown and a mistake log.</p>
+   <div class="prog"><span class="pill" style="--c:var(--mid)">45 MC · 60 min</span>${ex.midterm?`<span>practice midterm best: <b>${ex.midterm.best}%</b></span>`:""}<span class="go">Open</span></div></a>`;
+$("#counts").innerHTML=`<span><b>${U.length}</b>units</span><span><b>${totalCh}</b>chapters</span><span><b>${totalQ}</b>exam questions</span><span><b>${totalT}</b>terms</span>`;
+
+/* question of the day */
+const pool=H.bank(); if(pool.length){ const day=Math.floor(Date.now()/864e5); const q=pool[(day*7919)%pool.length];
+  H.mcq($("#qod"),q,{label:`Week ${H.unit(q.unit).n} · ${H.unit(q.unit).short}`,onAnswer:ok=>{ if(!ok&&q.ch) $("#qod .fbx").insertAdjacentHTML("beforeend",` <a href="${H.chLink(q.ch)}">Review that chapter</a>`); }}); }
+
+/* new this week */
+const fresh=U.map(u=>({u,n:[...u.terms,...u.questions].filter(x=>H.isNew(x.added)).length})).filter(x=>x.n);
+$("#newlist").innerHTML=fresh.length?`<ul class="changelog">${fresh.map(x=>`<li><span class="pill new">new</span> <a href="unit.html?u=${x.u.id}">Week ${x.u.n}: ${esc(x.u.short)}</a>, ${x.n} new terms and questions</li>`).join("")}</ul>`:`<p class="muted small">Nothing added in the last 7 days.</p>`;
+})();
+</script>
+</body>
+</html>

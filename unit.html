@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Unit | HLTH 101 Interactive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<header id="nav"></header>
+<section class="phead" id="phead"></section>
+<main class="wrap main" id="view"></main>
+<footer id="foot"></footer>
+<script src="studydata.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/figs.js"></script>
+<script src="assets/act.js"></script>
+<script src="assets/guide.js"></script>
+<script>
+(function(){
+const {esc,$,$$}=H;
+const uid=(new URLSearchParams(location.search).get("u")||"W1").toUpperCase();
+const U=H.unit(uid)||H.units[0];
+const C=H.color(U);
+document.title=`Week ${U.n}: ${U.short} | HLTH 101 Interactive`;
+document.documentElement.style.setProperty("--c",C);
+H.nav("units"); H.foot();
+const TABS=[["chapters","Chapters"],["explore","Explore"],["practice","Practice"],["exam","Mini exam"],["glossary","Glossary"]];
+$("#phead").innerHTML=`<div class="wrap"><div class="row"><span class="pill" style="--c:${C}">Week ${U.n}</span><span class="mono">${esc((U.lectures||[]).join(" · "))}</span></div>
+  <h1>${esc(U.title)}</h1><p class="muted" style="margin:0;max-width:52em">${esc(U.blurb)}</p>
+  <div class="tabs" role="tablist">${TABS.map(([k,l])=>`<a class="tab" href="#${k}" data-t="${k}" style="--c:${C}">${l}</a>`).join("")}</div></div>`;
+const view=$("#view");
+function setTab(t){ $$(".tab").forEach(a=>a.setAttribute("aria-current",a.dataset.t===t?"true":"false")); }
+function route(){
+  const h=location.hash.slice(1);
+  if(h.startsWith("ch=")) return chapter(h.slice(3));
+  const t=TABS.find(x=>x[0]===h)?h:"chapters"; setTab(t);
+  ({chapters,explore,practice,exam,glossary})[t]();
+  window.scrollTo(0,0);
+}
+window.addEventListener("hashchange",route);
+
+/* chapters list */
+function chapters(){
+  const prog=H.get("progress",{});
+  view.innerHTML=`<ol class="chlist">${U.chapters.map((c,i)=>{ const p=prog[c.id];
+    return `<li><a class="chitem" href="#ch=${c.id}" style="--c:${C}"><span class="chnum">${i+1}</span><h3>${esc(c.title)}</h3><span class="meta">${esc(c.blurb||"")}</span>
+      <span class="meta"><span class="src">${esc(c.src||"")}</span> · ${c.steps.length} activities${p?` · <span class="done-tag">first try ${H.pct(p.first.s,p.first.t)}%${p.best>H.pct(p.first.s,p.first.t)?`, best ${p.best}%`:""}</span>`:""}${H.isNew(c.added)?' · <span class="pill new">new</span>':""}</span></a></li>`; }).join("")}</ol>
+    <div class="split" style="margin-top:24px"><div class="card"><h3>How to use this unit tonight</h3><p class="muted small" style="margin:0">Do the chapters in order (about 5 minutes each), then the mini exam. Anything you miss goes to the mistake log on the Midterm prep page.</p></div>
+    <div class="card"><h3>Readiness</h3><p class="small" style="margin:0">Terms: <b>${H.readiness(U.id)}%</b> in the term trainer · Mini exam best: <b>${(H.get("exam",{})[U.id]||{}).best??"not taken"}${(H.get("exam",{})[U.id]||{}).best!=null?"%":""}</b></p><div class="row" style="margin-top:8px"><a class="btn sm" href="terms.html?u=${U.id}" style="--accent:${C}">Train these terms</a><a class="btn sm ghost" href="#exam">Mini exam</a></div></div></div>`;
+}
+
+/* one chapter */
+function chapter(id){
+  setTab("chapters");
+  const ci=U.chapters.findIndex(c=>c.id===id); if(ci<0){ location.hash="chapters"; return; }
+  const c=U.chapters[ci]; const terms=U.terms.filter(t=>t.ch===c.id); H.markSeen(terms.map(t=>t.id));
+  let si=0; const scores=[];
+  function draw(){
+    const fin=si>=c.steps.length;
+    view.innerHTML=`<div class="crumb"><button class="back" onclick="location.hash='chapters'">All chapters</button><h2>${ci+1}. ${esc(c.title)}</h2>
+      <div class="steps" aria-label="Progress">${c.steps.map((s,i)=>`<i class="${i<si?"on":""} ${i===si?"cur":""}"></i>`).join("")}</div></div>
+      <div class="stage"><div class="panel learn"><div class="kicker">Learn · <span class="src">${esc(c.src||"")}</span></div><div>${c.learn}</div>
+        ${terms.length?`<div class="kicker" style="margin-top:12px">Terms in this chapter</div>${terms.map(t=>`<details class="small" style="margin:4px 0"><summary><b>${esc(t.term)}</b></summary><div>${esc(t.def)}${t.ex?` <i>Example: ${esc(t.ex)}</i>`:""} <span class="src">${esc(t.src||"")}</span></div></details>`).join("")}`:""}</div>
+        <div class="panel" id="stepbox"></div></div>`;
+    const box=$("#stepbox");
+    if(fin){ const s=scores.reduce((a,b)=>a+b[0],0), t=scores.reduce((a,b)=>a+b[1],0); const r=H.saveCh(c.id,s,t); const nx=U.chapters[ci+1];
+      box.innerHTML=`<div class="kicker">Chapter done</div><h3>${s} / ${t} on this run · first try ${H.pct(r.first.s,r.first.t)}%</h3><p>${esc(c.summary||"")}</p>
+        <div class="row">${nx?`<a class="btn" href="#ch=${nx.id}" style="--accent:${C}">Next: ${esc(nx.title)}</a>`:`<a class="btn" href="#exam" style="--accent:${C}">Take the mini exam</a>`}<button class="btn ghost" id="redo">Redo chapter</button></div>`;
+      $("#redo").onclick=()=>{ si=0; scores.length=0; draw(); }; return; }
+    const st=c.steps[si]; const holder=document.createElement("div"); box.append(holder);
+    const nav=document.createElement("div"); nav.className="navrow"; nav.innerHTML=`<span class="mono">Activity ${si+1} of ${c.steps.length}</span><button class="btn sm nx" disabled style="--accent:${C}">${si+1===c.steps.length?"Finish chapter":"Next"}</button>`; box.append(nav);
+    H.renderStep(holder,st,(s,t)=>{ scores[si]=[s,t]; $(".nx",nav).disabled=false; },{color:C});
+    $(".nx",nav).onclick=()=>{ si++; draw(); $("#stepbox").scrollIntoView({block:"nearest"}); };
+  }
+  draw(); window.scrollTo(0,0);
+}
+
+/* explore */
+function explore(){
+  const ex=(U.explore||[]); if(!ex.length){ view.innerHTML=`<p class="muted">No figure for this unit yet.</p>`; return; }
+  let fi=0, on=null;
+  function draw(){
+    const e=ex[fi], f=H.FIG[e.fig]; const items=e.items||{}; const keys=Object.keys(f.slots); on=on||keys[0]; const it=items[on]||{};
+    const labels={}; keys.forEach(k=>{ if(items[k]&&items[k].label) labels[k]=items[k].label; });
+    view.innerHTML=`${ex.length>1?`<div class="row" style="margin-bottom:12px">${ex.map((x,i)=>`<button class="btn sm ${i===fi?"":"ghost"}" data-f="${i}" style="--accent:${C}">${esc(x.title||H.FIG[x.fig].title)}</button>`).join("")}</div>`:""}
+      <div class="stage"><figure class="plate">${H.figSVG(e.fig,{mode:"explore",labels,on,color:C})}<figcaption><b>Fig. ${fi+1}</b> ${esc(e.caption||f.caption)} Click any box to read about it.</figcaption></figure>
+      <div class="panel"><div class="kicker">${esc(e.title||f.title)}</div><h3>${esc(labels[on]||f.labels[on])}</h3><p>${esc(it.text||"")}</p>${it.src?`<div class="src">${esc(it.src)}</div>`:""}
+      <div class="row" style="margin-top:12px"><button class="btn sm ghost" id="prev">Previous</button><button class="btn sm" id="next" style="--accent:${C}">Next part</button></div></div></div>`;
+    $$("[data-f]").forEach(b=>b.onclick=()=>{ fi=+b.dataset.f; on=null; draw(); });
+    $$(".slot",view).forEach(g=>{ g.onclick=()=>{ on=g.dataset.slot; draw(); }; g.onkeydown=ev=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); on=g.dataset.slot; draw(); } }; });
+    const i=keys.indexOf(on); $("#prev").onclick=()=>{ on=keys[(i-1+keys.length)%keys.length]; draw(); }; $("#next").onclick=()=>{ on=keys[(i+1)%keys.length]; draw(); };
+  }
+  draw();
+}
+
+function practice(){
+  view.innerHTML=`<p class="sub" style="margin-top:0">Endless random questions from this unit, instant feedback. Questions you miss come back more often.</p><div id="pr"></div>
+    <p class="small muted">Want several units at once? Use <a href="midterm.html#practice">mixed practice</a> on the Midterm prep page.</p>`;
+  H.practice($("#pr"),{units:()=>[U.id]});
+}
+function exam(){
+  const n=Math.min(15,H.bank([U.id]).length);
+  const start=()=>H.exam(view,H.pickBalanced([U.id],n),{scope:U.id,title:`Week ${U.n} mini exam`,kicker:U.short,groupBy:"ch",again:start});
+  const rec=H.get("exam",{})[U.id];
+  view.innerHTML=`<div class="card"><div class="kicker">Mini exam</div><h2>${n} questions, no feedback until you submit</h2><p class="muted">Then you get a breakdown by chapter, a list of what to relearn with links back, and an explanation for every question.${rec?` Your best so far: <b>${rec.best}%</b>.`:""}</p><button class="btn" id="go" style="--accent:${C}">Start</button></div>`;
+  $("#go").onclick=start;
+}
+function glossary(){
+  const seen=H.get("seen",{}); let q="", f="all";
+  view.innerHTML=`<div class="gl-tools"><input type="search" placeholder="Search ${U.terms.length} terms" aria-label="Search terms"><div class="choose" style="margin:0">${["all","not yet seen","seen","tested"].map(x=>`<label><input type="radio" name="f" value="${x}" ${x==="all"?"checked":""}>${x}</label>`).join("")}</div></div><div class="gl"></div>`;
+  const draw=()=>{ const st=t=>seen[t.id]||"not yet seen";
+    $(".gl",view).innerHTML=U.terms.filter(t=>(f==="all"||st(t)===f)&&(t.term+" "+t.def).toLowerCase().includes(q)).sort((a,b)=>a.term.localeCompare(b.term)).map(t=>`<div class="it"><span class="st ${st(t).split(" ")[0]}">${st(t)}</span><b>${esc(t.term)}</b>${H.isNew(t.added)?' <span class="pill new">new</span>':""}<div>${esc(t.def)}</div>${t.ex?`<div class="small muted">Example: ${esc(t.ex)}</div>`:""}<div class="src">${esc(t.src||"")}${t.ch?` · <a href="#ch=${t.ch}">chapter</a>`:""}</div></div>`).join("")||`<p class="muted">No matches.</p>`; };
+  $("input[type=search]",view).oninput=e=>{ q=e.target.value.toLowerCase(); draw(); };
+  $$("input[name=f]",view).forEach(r=>r.onchange=()=>{ f=r.value; draw(); });
+  draw();
+}
+route();
+})();
+</script>
+</body>
+</html>

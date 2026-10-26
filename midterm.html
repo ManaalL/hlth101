@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Midterm prep | HLTH 101 Interactive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+:root{--c:var(--mid)}
+.cd{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end}
+.cd div{min-width:64px} .cd .mono{display:block}
+textarea{width:100%;min-height:90px;padding:10px 12px;border-radius:8px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);font:inherit;resize:vertical}
+.rv{border-top:1px solid var(--rule);padding:16px 0} .rv:first-child{border-top:0}
+</style>
+</head>
+<body>
+<header id="nav"></header>
+<section class="phead"><div class="wrap">
+  <div class="row"><span class="pill" style="--c:var(--mid)">Exam 1 · Weeks 1 to 5</span><span class="mono">45 multiple choice · 60 minutes · 17.5% · STC 0010</span></div>
+  <h1>Midterm prep</h1>
+  <div class="cd" id="cd"></div>
+  <div class="tabs">
+    <a class="tab" href="#plan" data-t="plan">Tonight's plan</a><a class="tab" href="#midterm" data-t="midterm">Practice midterm</a><a class="tab" href="#practice" data-t="practice">Mixed practice</a><a class="tab" href="#review" data-t="review">Written review</a><a class="tab" href="#studyplan" data-t="studyplan">My study plan</a><a class="tab" href="#mistakes" data-t="mistakes">Mistake log</a>
+  </div>
+</div></section>
+<main class="wrap main" id="view"></main>
+<footer id="foot"></footer>
+<script src="studydata.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/figs.js"></script>
+<script src="assets/act.js"></script>
+<script src="assets/guide.js"></script>
+<script>
+(function(){
+const {esc,$,$$}=H; H.nav("mid"); H.foot();
+const ALL=H.units.map(u=>u.id); const view=$("#view");
+function cd(){ const c=H.countdown(); $("#cd").innerHTML=c?`<div><span class="mono">days</span><span class="count">${c.d}</span></div><div><span class="mono">hours</span><span class="count">${c.h}</span></div><div><span class="mono">minutes</span><span class="count">${c.m}</span></div><div class="muted small" style="max-width:24em">until Exam 1, Tuesday Oct 27, 4:00 to 5:20 pm. The exam itself is 60 minutes: about 80 seconds a question.</div>`:`<div class="muted">Exam 1 has started or passed. Good luck, or well done.</div>`; }
+cd(); setInterval(cd,30000);
+const route=()=>{ const h=location.hash.slice(1)||"plan"; const t=({plan,midterm,practice,review,studyplan,mistakes})[h]?h:"plan"; $$(".tab").forEach(a=>a.setAttribute("aria-current",a.dataset.t===t?"true":"false")); ({plan,midterm,practice,review,studyplan,mistakes})[t](); };
+window.addEventListener("hashchange",()=>{ route(); window.scrollTo(0,0); });
+
+/* weakest units from the diagnostic (or all results so far) */
+function weakUnits(){
+  const d=(H.get("exam",{}).diag||{}).history; const last=d&&d[d.length-1];
+  if(last&&last.detail){ return Object.entries(last.detail).sort((a,b)=>a[1].r/a[1].t-b[1].r/b[1].t).map(x=>x[0]); }
+  const {byU}=H.accuracy(); const tried=Object.entries(byU).filter(x=>x[1].r+x[1].w>0);
+  if(tried.length) return tried.sort((a,b)=>a[1].r/(a[1].r+a[1].w)-b[1].r/(b[1].r+b[1].w)).map(x=>x[0]);
+  return null;
+}
+function plan(){
+  const done=H.get("plan",{}); const weak=weakUnits(); const w2=weak?weak.slice(0,2):null; const uName=id=>`Week ${H.unit(id).n}: ${H.unit(id).short}`;
+  const steps=[
+    ["diag","20 min","Diagnostic: 25 questions, 5 from each week",`No timer. It finds your two weakest weeks so the rest of tonight goes where it counts.`,`<button class="btn sm" data-go="diag">Start diagnostic</button>`],
+    ["fix","60 to 90 min","Fix your two weakest weeks",w2?`Your weakest: <b>${w2.map(uName).join("</b> and <b>")}</b>. Do their chapters in order, then each mini exam.`:`Do the diagnostic first and this step fills in. If you skip it: start with Week 3 (study designs and calculations are the most testable).`,w2?w2.map(id=>`<a class="btn sm ghost" href="unit.html?u=${id}">Open Week ${H.unit(id).n}</a>`).join(""):""],
+    ["terms","30 min","Term trainer on those weeks",`Flashcards until each week shows 70% readiness or more. Use "Name the term" for the last round.`,`<a class="btn sm ghost" href="terms.html${w2?"?u="+w2[0]:""}">Term trainer</a>`],
+    ["full","60 min","Full practice midterm, timed",`45 questions, 60 minutes, all five weeks. Treat it like the real thing: no notes, flag and come back.`,`<a class="btn sm" href="#midterm">Practice midterm</a>`],
+    ["redo","20 min","Redo your mistake log",`Every question you have missed anywhere on the site. Each one you get right drops off.`,`<a class="btn sm ghost" href="#mistakes">Mistake log</a>`],
+    ["sleep","7 to 9 h","Sleep",`Week 5: most adults need seven to nine hours, and sleep deprivation slows the daytime decline in stress hormones.`,""],
+    ["morning","45 min","Tomorrow morning: written review + one flashcard round",`Go through the review prompts you rated shaky or no idea, then one quick round in the term trainer.`,`<a class="btn sm ghost" href="#review">Written review</a>`],
+    ["warm","15 min","Before 4 pm: warm up, then stop",`Ten minutes of mixed practice to get your head in it. Then put it away and eat something.`,`<a class="btn sm ghost" href="#practice">Mixed practice</a>`]
+  ];
+  view.innerHTML=`<div class="split"><div><h2 style="font-size:1.5rem">The most efficient order for tonight</h2><p class="sub">About four hours tonight, an hour tomorrow. Tick each step as you finish it; this page remembers.</p>
+    <ol class="plan">${steps.map(([k,t,b,d,a])=>`<li class="${done[k]?"done":""}"><button class="box" data-k="${k}" aria-label="Mark done" aria-pressed="${!!done[k]}">${done[k]?"✓":""}</button><div><span class="t">${t}</span><br><b>${b}</b><div class="small muted">${d}</div></div><div class="row">${a}</div></li>`).join("")}</ol></div>
+    <div><div class="card"><h3>Why this order</h3><p class="small">Testing yourself first (the diagnostic) shows what you don't know, so you spend the long block on your weakest weeks instead of rereading what you already have. The timed practice midterm comes after, when there is still time to fix what it shows. Sleep goes on the list on purpose.</p>
+      <h3 style="margin-top:12px">What the exam looks like</h3><p class="small" style="margin:0">45 multiple-choice questions in 60 minutes on lecture content and assigned readings for Weeks 1 to 5 (course outline). This site covers the lecture slides. Skim the readings named in the slides (Core Concepts Ch. 1 to 3 and AFMC Primer chapters) if you have time left.</p></div>
+      <div class="card" style="margin-top:14px"><h3>Where you stand</h3><div class="brk">${H.units.map(u=>{ const e=H.get("exam",{})[u.id]; const {byU}=H.accuracy(); const a=byU[u.id]; const p=a&&a.r+a.w?H.pct(a.r,a.r+a.w):null; return `<div>Week ${u.n}: ${esc(u.short)}</div><div class="bar" style="--c:${H.color(u)}"><i style="width:${p||0}%"></i></div><div class="mono">${p==null?"--":p+"%"}</div>`; }).join("")}</div><p class="small muted" style="margin:8px 0 0">Share of questions answered right anywhere on the site.</p></div></div></div>`;
+  $$(".plan .box").forEach(b=>b.onclick=()=>{ const d=H.get("plan",{}); d[b.dataset.k]=!d[b.dataset.k]; H.set("plan",d); plan(); });
+  $$("[data-go=diag]").forEach(b=>b.onclick=diag);
+}
+function diag(){
+  const start=()=>H.exam(view,H.pickBalanced(ALL,25),{scope:"diag",title:"Diagnostic: 5 questions from each week",kicker:"Tonight's plan · step 1",groupBy:"unit",again:start,againLabel:"Take another diagnostic",
+    onFinish:()=>{ const d=H.get("plan",{}); d.diag=true; H.set("plan",d); view.insertAdjacentHTML("afterbegin",`<div class="fb ok" style="margin-bottom:12px"><b>Step 1 done.</b> <a href="#plan">Back to tonight's plan</a> to see your two weakest weeks.</div>`); }});
+  start();
+}
+function midterm(){
+  let sel=new Set(ALL);
+  view.innerHTML=`<div class="card"><div class="kicker">Practice midterm</div><h2>Just like Exam 1: 45 questions, 60 minutes</h2><p class="muted">Questions are spread evenly across the weeks you pick, and ones you have missed before are more likely to show up. No feedback until you submit. Then you get a breakdown by week, what to relearn, and an explanation for every question.</p>
+    <div class="kicker">Weeks</div><div class="choose" id="mu">${H.units.map(u=>`<label><input type="checkbox" value="${u.id}" checked>Week ${u.n}: ${esc(u.short)}</label>`).join("")}</div>
+    <div class="kicker">Length</div><div class="choose" id="ml">${[[45,"45 questions, 60 min (real length)"],[25,"25 questions, 33 min"],[15,"15 questions, 20 min"]].map(([n,l],i)=>`<label><input type="radio" name="len" value="${n}" ${i?"":"checked"}>${l}</label>`).join("")}<label><input type="checkbox" id="timed" checked>Timed</label></div>
+    <button class="btn" id="go">Start</button>${(H.get("exam",{}).midterm)?` <span class="muted small">Best so far: <b>${H.get("exam",{}).midterm.best}%</b></span>`:""}</div>`;
+  $$("#mu input").forEach(i=>i.onchange=()=>{ i.checked?sel.add(i.value):sel.delete(i.value); });
+  $("#go").onclick=()=>{ const n=+$("input[name=len]:checked").value; const units=[...sel]; if(!units.length) return; const timed=$("#timed").checked;
+    const start=()=>H.exam(view,H.pickBalanced(units,n),{scope:"midterm",title:`Practice midterm: ${n} questions`,kicker:"Exam 1 practice",groupBy:"unit",minutes:timed?Math.round(n*60/45):0,again:start,
+      onFinish:()=>{ if(n===45){ const d=H.get("plan",{}); d.full=true; H.set("plan",d); } }});
+    start(); };
+}
+function practice(){
+  let sel=new Set(ALL);
+  view.innerHTML=`<p class="sub" style="margin-top:0">Endless random questions from the weeks you pick, with instant feedback. Questions you miss come back more often.</p><div class="choose" id="pu">${H.units.map(u=>`<label><input type="checkbox" value="${u.id}" checked>Week ${u.n}</label>`).join("")}</div><div id="pr"></div>`;
+  $$("#pu input").forEach(i=>i.onchange=()=>{ i.checked?sel.add(i.value):sel.delete(i.value); });
+  H.practice($("#pr"),{units:()=>[...sel]});
+}
+function review(){
+  const rv=H.get("review",{}); const drafts=H.get("drafts",{}); let f="all";
+  const items=H.units.flatMap(u=>(u.review||[]).map(r=>({...r,u})));
+  view.innerHTML=`<p class="sub" style="margin-top:0">Short-answer prompts written in the style of the course. Answer in your head or in the box, open the model answer, tick the points you hit, then rate yourself. Your ratings feed your study plan.</p>
+    <div class="choose">${["all","not rated","no idea","shaky","got it"].map(x=>`<label><input type="radio" name="rf" value="${x}" ${x==="all"?"checked":""}>${x}</label>`).join("")}</div><div class="card" id="rl"></div>`;
+  const lab={g:"got it",s:"shaky",n:"no idea"};
+  const draw=()=>{ const r=H.get("review",{}); $("#rl").innerHTML=items.filter(x=>f==="all"||(f==="not rated"?!r[x.id]:lab[r[x.id]]===f)).map(x=>`<div class="rv" data-id="${x.id}"><div class="row" style="justify-content:space-between"><span class="pill" style="--c:${H.color(x.u)}">Week ${x.u.n}</span><span class="src">${esc(x.src||"")}</span></div><div class="q">${esc(x.q)}</div>
+    <textarea placeholder="Your answer (saved in this browser)">${esc(drafts[x.id]||"")}</textarea>
+    <details class="ans"><summary>Model answer and checklist</summary><p style="margin:8px 0">${esc(x.answer)}</p><ul class="checklist">${x.points.map(p=>`<li><input type="checkbox"> <span>${esc(p)}</span></li>`).join("")}</ul>${x.ch?`<a class="small" href="${H.chLink(x.ch)}">Open the chapter</a>`:""}</details>
+    <div class="row rate" style="margin-top:8px"><span class="mono">Rate:</span>${["g","s","n"].map(k=>`<button class="${k}" data-r="${k}" aria-pressed="${r[x.id]===k}">${lab[k]}</button>`).join("")}</div></div>`).join("")||`<p class="muted">Nothing here.</p>`;
+    $$(".rv").forEach(d=>{ const id=d.dataset.id; $$("[data-r]",d).forEach(b=>b.onclick=()=>{ const r=H.get("review",{}); r[id]=b.dataset.r; H.set("review",r); $$("[data-r]",d).forEach(z=>z.setAttribute("aria-pressed",z===b)); });
+      $("textarea",d).oninput=e=>{ const dr=H.get("drafts",{}); dr[id]=e.target.value; H.set("drafts",dr); }; }); };
+  $$("input[name=rf]").forEach(i=>i.onchange=()=>{ f=i.value; draw(); }); draw();
+}
+function studyplan(){
+  const p=H.studyPlan(); const ex=H.get("exam",{});
+  const row=x=>`<li><a href="${H.chLink(x.c.id)}">${esc(H.chName(x.c.id))}</a> <span class="small muted">${x.score!=null?H.pct(x.score*100,100)+"% · "+esc(x.why.join(", ")):""}</span></li>`;
+  view.innerHTML=`<div class="split"><div><div class="card"><h3>Relearn first</h3>${p.weak.length?`<ol>${p.weak.map(row).join("")}</ol>`:`<p class="muted small">Nothing below 80% yet${p.untried.length===Object.keys(H.CH).length?" because you haven't answered anything. Take the diagnostic on the Tonight's plan tab.":"."}</p>`}</div>
+    <div class="card" style="margin-top:14px"><h3>Not started</h3>${p.untried.length?`<ul>${p.untried.map(x=>`<li><a href="${H.chLink(x.c.id)}">${esc(H.chName(x.c.id))}</a></li>`).join("")}</ul>`:`<p class="muted small">You have tried every chapter.</p>`}</div></div>
+    <div><div class="card"><h3>By week</h3><div class="brk">${H.units.map(u=>{ const {byU}=H.accuracy(); const a=byU[u.id]; return `<div>Week ${u.n}: ${esc(u.short)}<div class="small muted">terms ${H.readiness(u.id)}% · mini exam ${ex[u.id]?ex[u.id].best+"%":"--"}</div></div><div class="bar" style="--c:${H.color(u)}"><i style="width:${a&&a.r+a.w?H.pct(a.r,a.r+a.w):0}%"></i></div><div class="mono">${a&&a.r+a.w?H.pct(a.r,a.r+a.w)+"%":"--"}</div>`; }).join("")}</div></div>
+    <div class="card" style="margin-top:14px"><h3>Solid (80% or more)</h3>${p.strong.length?`<ul>${p.strong.map(row).join("")}</ul>`:`<p class="muted small">Nothing yet.</p>`}</div></div></div>`;
+}
+function mistakes(){
+  const m=H.get("mistakes",{}); const open=Object.entries(m).filter(([id,v])=>!v.fixed&&H.Q[id]).sort((a,b)=>b[1].n-a[1].n); const fixed=Object.values(m).filter(v=>v.fixed).length;
+  view.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:12px"><p class="sub" style="margin:0">${open.length} open · ${fixed} fixed. Every question you get wrong anywhere on the site lands here until you get it right.</p>${open.length?`<button class="btn" id="redo">Redo all ${open.length}</button>`:""}</div>
+    <div class="card">${open.length?open.map(([id,v])=>{ const q=H.Q[id]; return `<div class="ex-q"><div class="row" style="justify-content:space-between"><span class="pill" style="--c:${H.color(q.unit)}">Week ${H.unit(q.unit).n}</span><span class="mono">missed ${v.n}x</span></div><div class="q" style="font-weight:600">${esc(q.q)}</div>${q.ch?`<a class="small" href="${H.chLink(q.ch)}">${esc(H.chName(q.ch))}</a>`:""}</div>`; }).join(""):`<p class="muted">No open mistakes. Take the diagnostic or a practice midterm to find some.</p>`}</div>`;
+  if(open.length) $("#redo").onclick=()=>{ view.innerHTML=`<p class="sub" style="margin-top:0">Redo mode. Get one right and it leaves the log. <a href="#mistakes">Back to the list</a></p><div id="pr"></div>`;
+    H.practice($("#pr"),{pool:()=>Object.entries(H.get("mistakes",{})).filter(([id,v])=>!v.fixed&&H.Q[id]).map(([id])=>H.Q[id])}); };
+}
+route();
+})();
+</script>
+</body>
+</html>

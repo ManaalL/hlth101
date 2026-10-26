@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Term trainer | HLTH 101 Interactive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<header id="nav"></header>
+<section class="phead"><div class="wrap">
+  <span class="mono">All weeks · spaced repetition</span>
+  <h1>Term trainer</h1>
+  <p class="muted" style="margin:0;max-width:50em">Five Leitner boxes, saved in this browser. A term you know moves up a box and comes back later. A term you miss drops to box 1 and comes back in this session.</p>
+</div></section>
+<main class="wrap main">
+  <div class="split">
+    <div>
+      <div class="card"><div class="kicker">Units</div><div class="choose" id="units"></div>
+        <div class="kicker" style="margin-top:6px">Mode</div><div class="choose" id="modes">
+          <label><input type="radio" name="m" value="flash" checked>Flashcards</label>
+          <label><input type="radio" name="m" value="name">Name the term</label>
+          <label><input type="radio" name="m" value="choice">Name it (4 choices)</label></div>
+        <div class="kicker" style="margin-top:6px">Boxes</div><div class="boxes" id="boxes"></div>
+        <p class="small muted" style="margin:6px 0 0">Box 1: now · 2: in 10 min · 3: in 6 h · 4: in 2 days · 5: in 6 days</p>
+      </div>
+      <div class="card" style="margin-top:14px"><div class="kicker">Readiness by unit</div><div class="brk" id="ready"></div></div>
+    </div>
+    <div class="card" id="trainer" style="padding:0"></div>
+  </div>
+</main>
+<footer id="foot"></footer>
+<script src="studydata.js"></script>
+<script src="assets/core.js"></script>
+<script src="assets/figs.js"></script>
+<script src="assets/act.js"></script>
+<script src="assets/guide.js"></script>
+<script>
+(function(){
+const {esc,$,$$,shuffle}=H; H.nav("terms"); H.foot();
+const qsU=(new URLSearchParams(location.search).get("u")||"").toUpperCase();
+const sel=new Set(qsU&&H.unit(qsU)?[qsU]:H.units.map(u=>u.id));
+const INT=[0,0,10*6e4,6*36e5,2*864e5,6*864e5];
+let mode="flash", queue=[], cur=null, flipped=false, sessionN=0, sessionR=0;
+$("#units").innerHTML=H.units.map(u=>`<label style="--c:${H.color(u)}"><input type="checkbox" value="${u.id}" ${sel.has(u.id)?"checked":""}>Week ${u.n}</label>`).join("");
+$$("#units input").forEach(i=>i.onchange=()=>{ i.checked?sel.add(i.value):sel.delete(i.value); build(); });
+$$("#modes input").forEach(i=>i.onchange=()=>{ mode=i.value; show(); });
+const terms=()=>Object.values(H.T).filter(t=>sel.has(t.unit));
+const L=()=>H.get("leitner",{});
+function stats(){
+  const l=L(), b=[0,0,0,0,0,0]; terms().forEach(t=>b[(l[t.id]&&l[t.id].box)||1]++);
+  $("#boxes").innerHTML=[1,2,3,4,5].map(i=>`<div><span class="mono">Box ${i}</span><b>${b[i]}</b></div>`).join("");
+  $("#ready").innerHTML=H.units.map(u=>{ const r=H.readiness(u.id); return `<div>Week ${u.n}: ${esc(u.short)}</div><div class="bar" style="--c:${H.color(u)}"><i style="width:${r}%"></i></div><div class="mono">${r}%</div>`; }).join("");
+}
+function build(){
+  const l=L(), now=Date.now();
+  const due=terms().filter(t=>!l[t.id]||(l[t.id].due||0)<=now);
+  queue=shuffle(due).sort((a,b)=>((l[a.id]||{}).box||1)-((l[b.id]||{}).box||1));
+  stats(); next();
+}
+function next(){ cur=queue.shift()||null; flipped=false; show(); }
+function grade(ok){
+  const l=L(); const r=l[cur.id]||{box:1,n:0}; r.n++; r.box=ok?Math.min(5,(r.box||1)+1):1; r.due=Date.now()+INT[r.box]; l[cur.id]=r; H.set("leitner",l);
+  H.markTested(cur.id); sessionN++; if(ok) sessionR++;
+  if(!ok) queue.splice(Math.min(queue.length,4),0,cur);
+  stats(); next();
+}
+const norm=s=>String(s).toLowerCase().replace(/\(.*?\)/g," ").replace(/[^a-z0-9 ]/g," ").replace(/\b(the|a|an)\b/g," ").replace(/\s+/g," ").trim();
+function lev(a,b){ const m=[...Array(b.length+1).keys()]; for(let i=1;i<=a.length;i++){ let p=m[0]; m[0]=i; for(let j=1;j<=b.length;j++){ const t=m[j]; m[j]=Math.min(m[j]+1,m[j-1]+1,p+(a[i-1]===b[j-1]?0:1)); p=t; } } return m[b.length]; }
+function close(a,t){ a=norm(a); const b=norm(t); if(!a) return false; if(a===b) return true; if(b.length>5&&(b.includes(a)&&a.length/b.length>.55)) return true; return lev(a,b)<=Math.max(1,Math.floor(b.length*.2)); }
+function show(){
+  const box=$("#trainer"); const u=cur&&H.unit(cur.unit);
+  if(!cur){ box.innerHTML=`<div class="flash"><div class="big">Nothing due right now.</div><p class="muted">${sessionN?`This session: ${sessionR}/${sessionN} right. `:""}Terms you knew are scheduled for later.</p><div class="row"><button class="btn" id="ahead">Study ahead anyway</button></div></div>`;
+    $("#ahead").onclick=()=>{ const l=L(); queue=shuffle(terms()).sort((a,b)=>((l[a.id]||{}).box||1)-((l[b.id]||{}).box||1)).slice(0,30); next(); }; return; }
+  const head=`<div class="row" style="justify-content:space-between;padding:14px 18px 0"><span class="pill" style="--c:${H.color(u)}">Week ${u.n} · box ${((L()[cur.id]||{}).box)||1}</span><span class="mono">${queue.length+1} due · ${sessionR}/${sessionN} this session</span></div>`;
+  if(mode==="flash"){
+    box.innerHTML=head+`<div class="flash" id="card" tabindex="0" role="button" aria-label="Flip card">${flipped?`<div class="mono">${esc(cur.term)}</div><div style="max-width:34em">${esc(cur.def)}</div>${cur.ex?`<div class="small muted" style="max-width:34em">Example: ${esc(cur.ex)}</div>`:""}<div class="src">${esc(cur.src||"")}</div>`:`<div class="big">${esc(cur.term)}</div><div class="muted small">Say the definition out loud, then tap to check.</div>`}</div>
+      <div class="row" style="padding:0 18px 18px;justify-content:center">${flipped?`<button class="btn ghost" id="no">Missed it</button><button class="btn" id="yes">Knew it</button>`:`<button class="btn" id="flip">Show definition</button>`}</div>`;
+    const flip=()=>{ flipped=true; show(); };
+    if(!flipped){ $("#card").onclick=flip; $("#flip").onclick=flip; $("#card").onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); flip(); } }; }
+    else { $("#no").onclick=()=>grade(false); $("#yes").onclick=()=>grade(true); }
+    return;
+  }
+  const useEx=cur.ex&&Math.random()<.35; const clue=useEx?`Example: ${cur.ex}`:cur.def;
+  if(mode==="name"){
+    box.innerHTML=head+`<div class="flash" style="align-items:stretch;text-align:left"><div class="kicker">${useEx?"Which term does this example show?":"Which term is this?"}</div><div style="font-size:1.08rem">${esc(clue)}</div>
+      <input class="answer-in" id="ans" placeholder="Type the term" autocomplete="off"><div id="fb"></div></div><div class="row" style="padding:0 18px 18px"><button class="btn" id="chk">Check</button><button class="btn ghost" id="idk">I don't know</button></div>`;
+    const inp=$("#ans"); inp.focus();
+    const check=(given)=>{ const ok=given!=null&&close(given,cur.term);
+      $("#fb").innerHTML=`<div class="fb ${ok?"ok":"bad"}"><b>${ok?"Correct.":"The term is: "+esc(cur.term)}</b>${ok?esc(cur.term):""} <span class="src">${esc(cur.src||"")}</span></div>`;
+      $(".row",box).innerHTML=ok?`<button class="btn" id="go">Next</button>`:`<button class="btn" id="go">Next</button><button class="btn ghost" id="over">I was right</button>`;
+      $("#go").onclick=()=>grade(ok); if($("#over")) $("#over").onclick=()=>grade(true); $("#go").focus(); };
+    $("#chk").onclick=()=>check(inp.value); $("#idk").onclick=()=>check(null); inp.onkeydown=e=>{ if(e.key==="Enter") check(inp.value); };
+    return;
+  }
+  const same=Object.values(H.T).filter(t=>t.unit===cur.unit&&t.id!==cur.id); const opts=shuffle([cur,...shuffle(same).slice(0,3)]);
+  box.innerHTML=head+`<div style="padding:14px 18px 18px"><div class="kicker">${useEx?"Which term does this example show?":"Which term is this?"}</div><div style="font-size:1.08rem;margin-bottom:6px">${esc(clue)}</div><div class="opts">${opts.map(t=>`<button class="opt" data-id="${t.id}">${esc(t.term)}</button>`).join("")}</div><div id="fb"></div></div>`;
+  $$(".opt",box).forEach(b=>b.onclick=()=>{ const ok=b.dataset.id===cur.id; $$(".opt",box).forEach(x=>{ x.disabled=true; if(x.dataset.id===cur.id) x.classList.add("right"); }); if(!ok) b.classList.add("wrong");
+    $("#fb").innerHTML=`<div class="fb ${ok?"ok":"bad"}"><b>${ok?"Correct.":"Not quite."}</b>${esc(cur.term)}: ${esc(cur.def)} <span class="src">${esc(cur.src||"")}</span></div><button class="btn" id="go">Next</button>`; $("#go").onclick=()=>grade(ok); $("#go").focus(); });
+}
+build();
+})();
+</script>
+</body>
+</html>
