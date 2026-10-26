@@ -247,7 +247,8 @@ details.ans{margin-top:8px} details.ans summary{cursor:pointer;color:var(--accen
   .wrap{padding:0 16px} body{font-size:16px}
   .mods{grid-template-columns:1fr} .mod.mid{grid-column:auto}
   .how{grid-template-columns:1fr} .how div{border-right:0;border-bottom:1px solid var(--rule)}
-  .nav nav a,.nav nav button{padding:6px 6px;font-size:.86rem} .logo span{display:none}
+  .nav nav{flex-wrap:nowrap;gap:0} .nav nav a,.nav nav button{padding:6px 7px;font-size:.86rem;white-space:nowrap} .logo span{display:none} .nav nav button:not(.themebtn){display:none}
+  .pulse-btn.pulse-btn{width:50px;height:50px;border-radius:13px;right:12px;bottom:12px} .pulse-btn.pulse-btn svg{transform:scale(.78)}
   .hero{padding-top:24px} .cmp,.mgrid{grid-template-columns:1fr} .boxes{grid-template-columns:repeat(5,minmax(0,1fr))}
   .brk{grid-template-columns:1fr auto} .brk .bar{grid-column:1/-1}
   .plan li{grid-template-columns:auto 1fr} .plan li .btn{grid-column:1/-1}
